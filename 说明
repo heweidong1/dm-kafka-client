@@ -1,0 +1,52 @@
+kafka服务，日志收集
+该项目在pom文件中，指定
+spring:
+  kafka:
+    producer:
+      bootstrap-servers: 192.168.174.130:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+kafka在虚拟机中的端口
+
+在发送日志时，发送到该服务中，该服务会通过logstash，发送到es中
+logstash.conf
+input
+bootstrap_servers：指向Kafka服务
+group_id：可以自由指定
+topics：数组形式，可以填写多个
+type:可以自由指定
+output
+hosts：指向Elasticsearch服务地址，可以有多个，注意IP和端口和实际保持一致
+index：表示在Elasticsearch中生成index的规则
+user和password：Elasticsearch的用户名和密码
+
+在该项目中：
+input{
+     kafka{
+        bootstrap_servers => ["http://kafka:9092"]
+        group_id => "test-consumer-group"
+        auto_offset_reset => "latest"
+        consumer_threads => 5
+        decorate_events => true
+        topics => ["user-consumer"]
+        type => "user-consumer"
+     }
+	 kafka{
+        bootstrap_servers => ["http://kafka:9092"]
+        group_id => "test-consumer-group"
+        auto_offset_reset => "latest"
+        consumer_threads => 5
+        decorate_events => true
+        topics => ["dm"]
+        type => "user-provider"
+     }
+}
+
+output {
+   elasticsearch{
+     hosts=> ["http://elasticsearch:9200"]
+     index=> "dmservice-%{+YYYY.MM.dd}"
+     user => "elastic"
+     password => "changeme"
+   }
+} 
